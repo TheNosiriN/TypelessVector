@@ -16,12 +16,14 @@
 
 
 namespace Hexo {
+
+
 	struct __NoTypeChecker {
 		template<typename T>
-		inline void init() const {}
+		constexpr inline void init() const {}
 		template<typename T>
-		inline bool compare() const { return true; }
-		inline void reset() const {}
+		constexpr inline bool compare() const { return true; }
+		constexpr inline void reset() const {}
 	};
 
 	struct DefaultTypeChecker {
@@ -30,9 +32,9 @@ namespace Hexo {
 		DefaultTypeChecker() : sign(typeid(void)) {}
 
 		template<typename T>
-		inline void init(){ sign = std::type_index(typeid(T)); }
+		constexpr inline void init(){ sign = std::type_index(typeid(T)); }
 		template<typename T>
-		inline bool compare() const { return (std::type_index(typeid(T)) == sign); }
+		constexpr inline bool compare() const { return (std::type_index(typeid(T)) == sign); }
 		inline void reset(){ sign = std::type_index(typeid(void)); }
 	};
 
@@ -51,12 +53,12 @@ namespace Hexo {
 
 	public:
 
-		inline void* operator[](const _Uint& i) const {
+		constexpr inline void* operator[](const _Uint& i) const {
 			return static_cast<uint8_t*>(m_data) + (i*m_stride);
 		}
 
 		template<typename T>
-		inline T& operator[](const _Uint& i) const {
+		constexpr inline T& operator[](const _Uint& i) const {
 			return *cast<T>( static_cast<uint8_t*>(m_data) + (i*m_stride) );
 		}
 
@@ -66,49 +68,49 @@ namespace Hexo {
 			typeless_vector* parent = nullptr;
 			_Uint index = 0;
 
-			inline Iterator& operator++(){
+			constexpr inline Iterator& operator++(){
 				if (parent){ index += 1; }
 				return *this;
 			}
-			inline Iterator& operator--(){
+			constexpr inline Iterator& operator--(){
 				if (parent){ index -= (index==0 ? 0 : 1); }
 				return *this;
 			}
-			inline Iterator operator++(int){
+			constexpr inline Iterator operator++(int){
 				Iterator t = *this;
 				++*this; return t;
 			}
-			inline Iterator operator--(int){
+			constexpr inline Iterator operator--(int){
 				Iterator t = *this;
 				--*this; return t;
 			}
-			inline Iterator operator+(const _Uint& num) const {
+			constexpr inline Iterator operator+(const _Uint& num) const {
 				return Iterator{ this->parent, this->index+num };
 			}
-			inline Iterator operator-(const _Uint& num) const {
+			constexpr inline Iterator operator-(const _Uint& num) const {
 				return Iterator{ this->parent, this->index-num };
 			}
-			inline Iterator& operator+=(const _Uint& num){
+			constexpr inline Iterator& operator+=(const _Uint& num){
 				this->index += num;
 				return *this;
 			}
-			inline Iterator& operator-=(const _Uint& num){
+			constexpr inline Iterator& operator-=(const _Uint& num){
 				this->index -= num;
 				return *this;
 			}
 
-			inline bool operator!=(const Iterator& t) const { return (this->index != t.index); }
-			inline bool operator==(const Iterator& t) const { return (this->index == t.index); }
+			constexpr inline bool operator!=(const Iterator& t) const { return (this->index != t.index); }
+			constexpr inline bool operator==(const Iterator& t) const { return (this->index == t.index); }
 
-			inline void* operator*() const {
+			constexpr inline void* operator*() const {
 				if (parent){ return parent->at(index); }
 				return nullptr;
 			}
 
 		};
 
-		inline Iterator begin() { return Iterator{ this, 0 }; }
-		inline Iterator end() { return Iterator{ this, this->m_size }; }
+		constexpr inline Iterator begin() { return Iterator{ this, 0 }; }
+		constexpr inline Iterator end() { return Iterator{ this, this->m_size }; }
 
 
 
@@ -127,7 +129,7 @@ namespace Hexo {
 
 
 		template<typename T>
-		inline bool __Init(){
+		constexpr inline bool __Init(){
 			s_checker.template init<T>();
 			m_stride = sizeof(T);
 			m_size = 0;
@@ -137,15 +139,15 @@ namespace Hexo {
 		}
 
 		template<typename T>
-		inline bool init(){
+		constexpr inline bool init(){
 			return __Init<T>();
 		}
 		template<typename T>
-		inline bool init(const T&){
+		constexpr inline bool init(const T&){
 			return __Init<T>();
 		}
 
-		inline bool init_raw(const _Uint& stride){
+		constexpr inline bool init_raw(const _Uint& stride){
 			m_stride = stride;
 			m_size = 0;
 			m_realsize = 1;
@@ -164,7 +166,7 @@ namespace Hexo {
 
 
 		template<typename T>
-		inline typename std::enable_if<std::is_same<TypeChecker, __NoTypeChecker>::value == false, T*>::type
+		constexpr inline typename std::enable_if<std::is_same<TypeChecker, __NoTypeChecker>::value == false, T*>::type
 		cast(void* p) const {
 			if ( s_checker.template compare<T>() == false ){
 				throw std::runtime_error("typeless_vector's TypeChecker detected a type different from the one given at last init/construction");
@@ -174,38 +176,38 @@ namespace Hexo {
 		}
 
 		template<typename T>
-		inline typename std::enable_if<std::is_same<TypeChecker, __NoTypeChecker>::value == true, T*>::type
+		constexpr inline typename std::enable_if<std::is_same<TypeChecker, __NoTypeChecker>::value == true, T*>::type
 		cast(void* p) const {
 			return static_cast<T*>(p);
 		}
 
 
 
-		inline void* __GetNoCheck(const _Uint& i) const {
+		constexpr inline void* __GetNoCheck(const _Uint& i) const {
 			return static_cast<uint8_t*>(m_data) + (i*m_stride);
 		}
 
-		inline bool __ValidateIndex(const _Uint& i) const {
+		constexpr inline bool __ValidateIndex(const _Uint& i) const {
 			return !(!m_data || i>=m_size);
 		}
 
-		inline void* at(const _Uint& i) const {
+		constexpr inline void* at(const _Uint& i) const {
 			if (!m_data || i >= m_size)return nullptr;
 			return static_cast<uint8_t*>(m_data) + (i*m_stride);
 		}
 
 		template<typename T>
-		inline T& at(const _Uint& i) const {
+		constexpr inline T& at(const _Uint& i) const {
 			return *(cast<T>(at(i)));
 		}
 
 
 
-		inline bool __CheckForReallocate(){
+		constexpr inline bool __CheckForReallocate(){
 			if (m_size == m_realsize){
 				/// python 3 list resize: https://github.com/python/cpython/blob/2.6/Objects/listobject.c#L48
 				_Uint newsize = m_size+1;
-				m_realsize *= (newsize >> 3) + (newsize < 9 ? 3 : 6);
+				m_realsize += (newsize >> 3) + (newsize < 9 ? 3 : 6);
 				///
 				m_data = std::realloc(m_data, m_realsize * m_stride);
 			}
@@ -215,26 +217,26 @@ namespace Hexo {
 
 
 
-		inline void* data() const { return this->m_data; }
+		constexpr inline void* data() const { return this->m_data; }
 
 		template<typename T>
-		inline T* data() const { return cast<T>(data); }
+		constexpr inline T* data() const { return cast<T>(data); }
 
-		inline _Uint size() const { return this->m_size; }
-		inline _Uint stride() const { return this->m_stride; }
-		inline _Uint capacity() const { return this->m_realsize; }
+		constexpr inline _Uint size() const { return this->m_size; }
+		constexpr inline _Uint stride() const { return this->m_stride; }
+		constexpr inline _Uint capacity() const { return this->m_realsize; }
 
 
 
 		template<typename T, typename... Args>
-		inline typename std::enable_if<std::is_constructible<T, Args...>::value == true, void>::type
-		__ConstructInPlace(Args&&... a){
+		constexpr inline typename std::enable_if<std::is_constructible<T, Args...>::value == true, void>::type
+		__ConstructInPlace(Args&&... a) const {
 			cast<T>(m_data)[m_size] = T(std::forward<T>(a)...);
 		}
 
 		template<typename T, typename... Args>
-		inline typename std::enable_if<std::is_constructible<T, Args...>::value == false, void>::type
-		__ConstructInPlace(Args&&... a){
+		constexpr inline typename std::enable_if<std::is_constructible<T, Args...>::value == false, void>::type
+		__ConstructInPlace(Args&&... a) const {
 			if (std::is_default_constructible<T>::value){
 				cast<T>(m_data)[m_size] = T{a...};
 			}else{
@@ -246,7 +248,7 @@ namespace Hexo {
 
 
 		template<typename T, typename... Args>
-		inline _Uint emplace_back(Args&&... a){
+		constexpr inline _Uint emplace_back(Args&&... a){
 			if (!__CheckForReallocate())return 0;
 
 			__ConstructInPlace<T>(a...);
@@ -255,7 +257,7 @@ namespace Hexo {
 		}
 
 		template<typename T>
-		inline _Uint push_back(const T& obj){
+		constexpr inline _Uint push_back(const T& obj){
 			if (!__CheckForReallocate())return 0;
 
 			cast<T>(m_data)[m_size] = obj;
@@ -265,7 +267,7 @@ namespace Hexo {
 
 
 
-		inline void erase(const _Uint& i){
+		constexpr inline void erase(const _Uint& i){
 			if (!m_data || i >= m_size)return;
 			std::memcpy(
 				__GetNoCheck(i), __GetNoCheck(i+1), m_stride*(m_size-1-i)
@@ -275,30 +277,30 @@ namespace Hexo {
 		}
 
 		template<typename T>
-		inline void erase(const _Uint& i) {
+		constexpr inline void erase(const _Uint& i) {
 			T* p = cast<T>(at(i));
 			if (p){ (*p).~T(); }
 			erase(i);
 		}
 
-		inline void erase(const Iterator& t) {
+		constexpr inline void erase(const Iterator& t) {
 			erase(t.index);
 		}
 
 		template<typename T>
-		inline void erase(const Iterator& t) {
+		constexpr inline void erase(const Iterator& t) {
 			erase<T>(t.index);
 		}
 
 
 
-		inline void clear(){
+		constexpr inline void clear(){
 			std::memset(m_data, 0, m_stride*m_size);
 			m_size = 0;
 		}
 
 		template<typename T>
-		inline void clear(){
+		constexpr inline void clear(){
 			for (_Uint i=0; i<m_size; ++i){
 				T* p = cast<T>(at(i));
 				if (p){ (*p).~T(); }
@@ -308,7 +310,7 @@ namespace Hexo {
 
 
 
-		inline bool reserve(const _Uint& size){
+		constexpr inline bool reserve(const _Uint& size){
 			if (m_size+size <= m_realsize)return true;
 
 			m_realsize += size - (m_realsize-m_size);
