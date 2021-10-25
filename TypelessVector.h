@@ -220,7 +220,7 @@ namespace Hexo {
 		constexpr inline void* data() const { return this->m_data; }
 
 		template<typename T>
-		constexpr inline T* data() const { return cast<T>(data); }
+		constexpr inline T* data() const { return cast<T>(m_data); }
 
 		constexpr inline _Uint size() const { return this->m_size; }
 		constexpr inline _Uint stride() const { return this->m_stride; }
