@@ -172,4 +172,37 @@ constexpr inline ComponentPack GetComponentPack() const {
 
 
 ## Performance
-What if I was faster than std::vector?
+What if I was faster than std::vector? In my curiosity, I ran several tests using 50 samples of an increasing `num` value (Number of Entries). Each sample has millions of entries. All using this code:
+```c++
+struct Position{
+	float x,y,z;
+};
+
+Container v; /// std::vector, TypelessVector and TypesafeTypelessVector
+
+for (int i=0; i<num; ++i){
+	v.push_back( Position{i+2.f,i*2.f,i/2.f} );
+	auto p = v.size()-1;
+	if (i % 4 == 2){
+		v.erase(v.begin()+p);
+	}
+}
+
+v.clear();
+
+```
+This small piece of code simulates rapid insertion and deletion, use of iterators and their operators, and clearing all elements. I tested it on two popular compilers, MSVC and GCC. The interactive graphs are in the benchmark folder as html files.
+
+![Performance](/benchmark/results.png "Title")
+![Memory](/benchmark/results_Mem.png "Title")
+
+- GCC's Implementation of vector is really fast, but the reason for that is because of the fewer number of `allocate` calls made, and large amount of memory used, as seen on its memory usage graph.
+
+- MSVC's Implementation is quite slow, even though it still uses so much memory per few million entries.
+
+- Meanwhile, TypelessVector and the Typesafe variant try to balance speed with memory usage using a nice balancing formula adapted from python 3's list resizing formula.
+
+
+
+### Final Remarks
+It was quite trivial to make TypelessVector, and I've already found many uses for it around HexoECS, I'm going to see how far I can go with make more useful containers typeless, next is `TypelessSparseSet`.

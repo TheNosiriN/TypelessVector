@@ -104,61 +104,61 @@ using namespace std::chrono_literals;
 
 
 
-struct Transform{
+struct Position{
 	float x,y,z;
 };
 
 
-// Hexo::TypelessVector ta(Transform{});
-// Hexo::TypesafeTypelessVector tas(Transform{});
-// std::vector<Transform> v;
+// Hexo::TypelessVector ta(Position{});
+// Hexo::TypesafeTypelessVector tas(Position{});
+// std::vector<Position> v;
 
 
 int main() {
 
 
 	auto taf = [&](size_t num, std::string name){
-		Hexo::TypelessVector v(Transform{});
+		Hexo::TypelessVector v(Position{});
 		MEASURE_TIME(
 			for (int i=0; i<num; ++i){
-				v.push_back( Transform{i+2.f,i*2.f,i/2.f} );
+				v.push_back( Position{i+2.f,i*2.f,i/2.f} );
 				auto p = v.size()-1;
 				if (i % 4 == 2){
 					v.erase(p);
 				}
 			}
 			v.clear();
-			return double(v.capacity()*sizeof(Transform));
+			return double(v.capacity()*sizeof(Position));
 		);
 	};
 
 	auto tasf = [&](size_t num, std::string name){
-		Hexo::TypesafeTypelessVector v(Transform{});
+		Hexo::TypesafeTypelessVector v(Position{});
 		MEASURE_TIME(
 			for (int i=0; i<num; ++i){
-				v.push_back( Transform{i+2.f,i*2.f,i/2.f} );
+				v.push_back( Position{i+2.f,i*2.f,i/2.f} );
 				auto p = v.size()-1;
 				if (i % 4 == 2){
 					v.erase(p);
 				}
 			}
 			v.clear();
-			return double(v.capacity()*sizeof(Transform));
+			return double(v.capacity()*sizeof(Position));
 		);
 	};
 
 	auto vec = [&](size_t num, std::string name){
-		std::vector<Transform> v;
+		std::vector<Position> v;
 		MEASURE_TIME(
 			for (int i=0; i<num; ++i){
-				v.push_back( Transform{i+2.f,i*2.f,i/2.f} );
+				v.push_back( Position{i+2.f,i*2.f,i/2.f} );
 				auto p = v.size()-1;
 				if (i % 4 == 2){
 					v.erase(v.begin()+p);
 				}
 			}
 			v.clear();
-			return double(v.capacity()*sizeof(Transform));
+			return double(v.capacity()*sizeof(Position));
 		);
 	};
 
