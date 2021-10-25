@@ -86,7 +86,7 @@ void* d = v[0];
 /// 2. if you want the type you can use its template variant, this will return a refernce and throw and exception if nothing is found
 int& d = v.operator[]<int>(0);
 
-/// or cast it
+/// or you can cast the void*
 int& d = v.cast<int>(v[0]);
 
 /// 3. you could also use .at methods
@@ -121,7 +121,7 @@ auto d = v.at<double>(0); /// This will throw an exception
 
 ```
 \
-`TypesafeTypelessVector` uses runtime type checking which can be slow. You are able to implement your own TypeChecker
+`TypesafeTypelessVector` uses runtime type checking which can be slow. You are able to implement your own TypeChecker for speed.
 ```c++
 using namespace Hexo;
 
@@ -140,7 +140,7 @@ typeless_vector<MyOwnTypeChecker> v;
 
 
 ## But Why did I do all this?
-You might ask yourself, will you ever need this? You probably wont. But I did. Recently, during HexoECS dev, I came across a problem. I had a structure similar to this
+You might ask yourself, will you ever need this? You probably wont. But I did. Recently, while working on HexoECS, I came across a problem. I had a structure similar to this
 ```c++
 template<typename T>
 struct ComponentPack {
@@ -148,7 +148,7 @@ struct ComponentPack {
 	...
 };
 ```
-And I was storing ComponentPacks of different types in a constexpr array. But how do you store different types in one array? You store their pointers
+And I was storing ComponentPacks of different types in a constexpr array. But how do you store different types in one array? You store pointers to them
 ```c++
 void* Packs[NumOfComponentsTypes];
 ```
@@ -196,13 +196,16 @@ This small piece of code simulates rapid insertion and deletion, use of iterator
 ![Performance](/benchmark/results.png "Title")
 ![Memory](/benchmark/results_Mem.png "Title")
 
-- GCC's Implementation of vector is really fast, but the reason for that is because of the fewer number of `allocate` calls made, and large amount of memory used, as seen on its memory usage graph.
+- GCC's Implementation of vector is really fast. But the reason for that is the fewer number of `allocate` calls made, and large amount of memory used, as seen on its memory usage graph.
 
 - MSVC's Implementation is quite slow, even though it still uses so much memory per few million entries.
 
-- Meanwhile, TypelessVector and the Typesafe variant try to balance speed with memory usage using a nice balancing formula adapted from python 3's list resizing formula.
+- Meanwhile, TypelessVector and the Typesafe variant try to balance speed with memory usage using a nice balancing formula adapted from python 3's list. (TypelessVector and Typesafe are on the same line).
+
+### More speed...
+To gain even more speed, don't use iterators, never give the type, only the stride to prevent casting, and don't use TypesafeTypelessVector
 
 
 
-### Final Remarks
-It was quite trivial to make TypelessVector, and I've already found many uses for it around HexoECS, I'm going to see how far I can go with make more useful containers typeless, next is `TypelessSparseSet`.
+## Final Remarks
+It was quite trivial to make TypelessVector, and I've already found many uses for it across HexoECS, I'm going to see how far I can go with making more useful containers typeless, next is `TypelessSparseSet`.
