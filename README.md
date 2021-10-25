@@ -191,7 +191,7 @@ for (int i=0; i<num; ++i){
 v.clear();
 
 ```
-This small piece of code simulates rapid insertion and deletion, use of iterators and their operators, and clearing all elements. I tested it on two popular compilers, MSVC and GCC. The interactive graphs are in the benchmark folder as html files.
+This small piece of code simulates rapid insertion and deletion, use of iterators and their operators, and clearing all elements. I tested it on two popular compilers, MSVC and GCC. The interactive graphs are in the benchmark folder, in results data as html files.
 
 ![Performance](/benchmark/results.png "Title")
 ![Memory](/benchmark/results_Mem.png "Title")
