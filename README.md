@@ -198,9 +198,12 @@ This small piece of code simulates rapid insertion and deletion, use of iterator
 
 - GCC's Implementation of vector is really fast. But the reason for that is the fewer number of `allocate` calls made, and large amount of memory used, as seen on its memory usage graph.
 
-- MSVC's Implementation is quite slow, even though it still uses so much memory per few million entries.
+- MSVC's Implementation is slower, even though it uses so much memory per few million entries.
 
 - Meanwhile, TypelessVector and the Typesafe variant try to balance speed with memory usage using a nice balancing formula adapted from python 3's list. (TypelessVector and Typesafe are on the same line).
+
+I think GCC does not like my vector. Sad. Fortunately, we can only come to a conclusion if you test it yourself.
+
 
 ### More speed...
 To gain even more speed, don't use iterators, never give the type, only the stride to prevent casting, and don't use TypesafeTypelessVector
