@@ -15,16 +15,16 @@ using Data = int;
 
 /// 1. TypelessVector is default_constructible
 /// but cannot be used unless initialized with a type or stride
-TypelessVector v;
+TypelessVector<> v;
 
 /// 2. Using the stride of the Data
-TypelessVector v(sizeof(Data));
+TypelessVector<> v(sizeof(Data));
 
 /// 3. Constructing a temporary reference of Data to obtain its type and stride
-TypelessVector v(Data{});
+TypelessVector<> v(Data{});
 
 /// 4. Can be post-initialized with either of the following ways
-TypelessVector v;
+TypelessVector<> v;
 v.init<Data>();
 v.init(Data{});
 v.init_raw(sizeof(Data));
@@ -40,7 +40,7 @@ TypelessVector uses the same function names as std::vector but not the same sema
 ```c++
 using namespace Hexo;
 
-TypelessVector v(sizeof(int));
+TypelessVector<> v(sizeof(int));
 
 /// 1. Data can be pushed back just like vector
 int index = v.push_back(10);
@@ -56,7 +56,7 @@ int index = v.emplace_back<int>();
 ```c++
 using namespace Hexo;
 
-TypelessVector v(sizeof(int));
+TypelessVector<> v(sizeof(int));
 int index = v.push_back(10);
 
 /// 1. Erase can be called normally but the destructor will not be called
@@ -77,7 +77,7 @@ v.erase<int>(v.begin()+index);
 ```c++
 using namespace Hexo;
 
-TypelessVector v(sizeof(int));
+TypelessVector<> v(sizeof(int));
 v.push_back(10);
 
 /// 1. Lookup can be achieved using the [] operator, but will return a void* and will return null if nothing is found
@@ -111,10 +111,10 @@ using namespace Hexo;
 
 /// TypesafeTypelessVector has the same constructors as TypelessVector except for the ones where only the stride is given
 /// Don't do this
-TypesafeTypelessVector v(sizeof(int));
+TypesafeTypelessVector<> v(sizeof(int));
 
 /// After it is initialized with a type, it will throw an exception if a different type is ever given
-TypesafeTypelessVector v(int{});
+TypesafeTypelessVector<> v(int{});
 v.push_back(10);
 
 auto d = v.at<double>(0); /// This will throw an exception
@@ -133,7 +133,7 @@ struct MyOwnTypeChecker {
 	inline void reset() {}
 };
 
-typeless_vector<MyOwnTypeChecker> v;
+typeless_vector<MyOwnTypeChecker, MyOwnAllocator> v;
 
 ```
 

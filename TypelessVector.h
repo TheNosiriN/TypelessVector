@@ -11,8 +11,14 @@
 #include <utility>
 #include <type_traits>
 #include <typeindex>
+#include <cstdint>
+#include <memory>
+#include <cstdlib>
+#include <limits>
 
-
+#ifndef HEXO_UTILS_TYPELESS_VECTOR_NO_EXCEPTIONS
+	#include <stdexcept>
+#endif
 
 
 namespace Hexo {
@@ -39,27 +45,73 @@ namespace Hexo {
 	};
 
 
-	template<class TypeChecker = __NoTypeChecker>
+
+    template <typename T>
+    struct __DefaultAllocator{
+        typedef T value_type;
+
+        __DefaultAllocator() = default;
+
+        template <class U>
+        constexpr __DefaultAllocator(const __DefaultAllocator <U>&) noexcept {}
+
+
+        constexpr inline T* allocate(const size_t& n) {
+            T* p = static_cast<T*>(__allocate(n, sizeof(T)));
+            if (!p){
+				/// maybe throw an error? Or a call to quit?
+			#ifndef HEXO_UTILS_TYPELESS_VECTOR_NO_EXCEPTIONS
+                throw std::bad_alloc();
+			#endif
+
+            }
+            return p;
+        }
+
+        constexpr inline void deallocate(T*& p, const size_t& n) noexcept {
+            std::free(p);
+        }
+
+        constexpr inline void* __allocate(const size_t& size, const size_t& stride){
+            if (size > std::numeric_limits<size_t>::max() / stride)return nullptr;
+            void* p = std::malloc(size*stride);
+            return p;
+        }
+
+    };
+
+    template <class T, class U>
+    inline bool operator==(const __DefaultAllocator<T>&, const __DefaultAllocator<U>&) { return true; }
+    template <class T, class U>
+    inline bool operator!=(const __DefaultAllocator<T>&, const __DefaultAllocator<U>&) { return false; }
+
+
+
+
+
+
+	template<typename TypeChecker = __NoTypeChecker, typename Allocator = __DefaultAllocator<uint8_t>>
 	struct typeless_vector {
 	private:
 		using _Uint = size_t;
 
-		void* m_data = nullptr;
+		uint8_t* m_data = nullptr;
 		_Uint m_stride = 0;
 		_Uint m_size = 0;
 		_Uint m_realsize = 0;
 
 		TypeChecker s_checker;
+        Allocator alloc;
 
 	public:
 
 		constexpr inline void* operator[](const _Uint& i) const {
-			return static_cast<uint8_t*>(m_data) + (i*m_stride);
+			return m_data + i*m_stride;
 		}
 
 		template<typename T>
 		constexpr inline T& operator[](const _Uint& i) const {
-			return *cast<T>( static_cast<uint8_t*>(m_data) + (i*m_stride) );
+			return *cast<T>( m_data + i*m_stride );
 		}
 
 
@@ -114,7 +166,7 @@ namespace Hexo {
 
 
 
-		typeless_vector() : m_stride(0), m_size(0), m_realsize(0), m_data(nullptr){}
+		typeless_vector() : m_stride(0), m_size(0), m_realsize(0), m_data(nullptr) {}
 
 		typeless_vector(const _Uint& stride){
 			init_raw(stride);
@@ -133,9 +185,9 @@ namespace Hexo {
 			s_checker.template init<T>();
 			m_stride = sizeof(T);
 			m_size = 0;
-			m_realsize = 1;
-			m_data = std::malloc(m_realsize * m_stride);
-			return (m_data != NULL);
+			m_realsize = 0;
+			m_data = nullptr;
+			return true;
 		}
 
 		template<typename T>
@@ -150,13 +202,15 @@ namespace Hexo {
 		constexpr inline bool init_raw(const _Uint& stride){
 			m_stride = stride;
 			m_size = 0;
-			m_realsize = 1;
-			m_data = std::malloc(m_realsize * m_stride);
-			return (m_data != NULL);
+			m_realsize = 0;
+            m_data = nullptr;
+			return true;
 		}
 
 		inline void reset(){
-			std::free(m_data);
+            if (m_data){
+                alloc.deallocate(m_data, m_realsize);
+            }
 			m_data = nullptr;
 			m_realsize = 0;
 			m_size = 0;
@@ -169,7 +223,10 @@ namespace Hexo {
 		constexpr inline typename std::enable_if<std::is_same<TypeChecker, __NoTypeChecker>::value == false, T*>::type
 		cast(void* p) const {
 			if ( s_checker.template compare<T>() == false ){
+                /// throw some error or call quits cuz the user violated typesafety
+			#ifndef HEXO_UTILS_TYPELESS_VECTOR_NO_EXCEPTIONS
 				throw std::runtime_error("typeless_vector's TypeChecker detected a type different from the one given at last init/construction");
+			#endif
 				return nullptr;
 			}
 			return static_cast<T*>(p);
@@ -184,7 +241,7 @@ namespace Hexo {
 
 
 		constexpr inline void* __GetNoCheck(const _Uint& i) const {
-			return static_cast<uint8_t*>(m_data) + (i*m_stride);
+			return m_data + i*m_stride;
 		}
 
 		constexpr inline bool __ValidateIndex(const _Uint& i) const {
@@ -193,7 +250,7 @@ namespace Hexo {
 
 		constexpr inline void* at(const _Uint& i) const {
 			if (!m_data || i >= m_size)return nullptr;
-			return static_cast<uint8_t*>(m_data) + (i*m_stride);
+			return m_data + i*m_stride;
 		}
 
 		template<typename T>
@@ -204,14 +261,39 @@ namespace Hexo {
 
 
 		constexpr inline bool __CheckForReallocate(){
-			if (m_size == m_realsize){
-				/// python 3 list resize: https://github.com/python/cpython/blob/2.6/Objects/listobject.c#L48
+			if (m_size >= m_realsize){
+				/// python 3 list: https://github.com/python/cpython/blob/2.6/Objects/listobject.c#L48
 				_Uint newsize = m_size+1;
 				m_realsize += (newsize >> 3) + (newsize < 9 ? 3 : 6);
 				///
-				m_data = std::realloc(m_data, m_realsize * m_stride);
+				// m_data = static_cast<uint8_t*>(std::realloc(m_data, m_realsize * m_stride));
+
+                uint8_t* ndata = alloc.allocate(m_realsize*m_stride);
+                if (!ndata)return false;
+
+                if (m_data && ndata!=m_data){
+                    std::memcpy(ndata, m_data, m_size*m_stride);
+                }
+                m_data = ndata;
 			}
-			return (m_data != NULL);
+			return true;
+		}
+
+
+        constexpr inline bool reserve(const _Uint& size){
+			if (m_size+size <= m_realsize)return true;
+
+			m_realsize += size - (m_realsize-m_size);
+
+			uint8_t* ndata = alloc.allocate(m_realsize*m_stride);
+            if (!ndata)return false;
+
+            if (m_data && ndata != m_data){
+                std::memcpy(ndata, m_data, m_size*m_stride);
+            }
+            m_data = ndata;
+
+			return true;
 		}
 
 
@@ -309,24 +391,15 @@ namespace Hexo {
 		}
 
 
-
-		constexpr inline bool reserve(const _Uint& size){
-			if (m_size+size <= m_realsize)return true;
-
-			m_realsize += size - (m_realsize-m_size);
-			void* d = std::realloc(m_data, m_realsize * m_stride);
-			if (!d)return false;
-			m_data = d;
-
-			return true;
-		}
-
 	};
 
-	typedef typeless_vector<__NoTypeChecker> TypelessVector;
-	typedef typeless_vector<DefaultTypeChecker> TypesafeTypelessVector;
+    template<typename T = __DefaultAllocator<uint8_t>>
+	using TypelessVector = typeless_vector<__NoTypeChecker, T>;
+    template<typename T = __DefaultAllocator<uint8_t>>
+	using TypesafeTypelessVector = typeless_vector<DefaultTypeChecker, T>;
 
 }
+
 
 
 
