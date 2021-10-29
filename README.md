@@ -121,7 +121,7 @@ auto d = v.at<double>(0); /// This will throw an exception
 
 ```
 \
-`TypesafeTypelessVector` uses runtime type checking which can be slow. You are able to implement your own TypeChecker for speed.
+`TypesafeTypelessVector` uses RTTI (Runtime Type Info) which can be slow. You are able to implement your own TypeChecker for speed.
 ```c++
 using namespace Hexo;
 
